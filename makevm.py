@@ -1,8 +1,16 @@
+import json
 import sys
 
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource.resources import ResourceManagementClient
-from azure.mgmt.resource.resources.models import ResourceGroup
+from azure.mgmt.resource.resources.models import (
+    ResourceGroup,
+    Deployment,
+    DeploymentProperties,
+    DeploymentMode,
+    ParametersLink,
+    TemplateLink
+)
 
 from credentials import (
     SUBSCRIPTION_ID,
@@ -10,6 +18,8 @@ from credentials import (
     TEST_KEY,
     TENANT_ID,
 )
+
+VM_DEPLOYMENT_PROPERTIES_FILE = 'vm_template.json'
 
 
 def get_or_create_resource_group(resource_groups, group_name):
@@ -27,18 +37,35 @@ def get_or_create_resource_group(resource_groups, group_name):
     )
 
 
-def create_resource(credentials, group_name):
-    resource_client = ResourceManagementClient(
-        credentials,
-        SUBSCRIPTION_ID,
-    )
-
+def create_resource_group(resource_client, group_name):
     resource_group = get_or_create_resource_group(
         resource_client.resource_groups,
         group_name,
     )
 
     print(resource_group)
+
+
+def create_vm(resource_client, group_name, deployment_name, template):
+    deployment_name = 'MyDeployment'
+
+    template = TemplateLink(
+        uri='https://github.com/azure-samples/resource-manager-python-template-deployment/blob/master/templates/template.json'
+    )
+
+    parameters = ParametersLink(
+        uri='https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-create-availability-set/azuredeploy.parameters.json',
+    )
+
+    result = resource_client.deployments.create_or_update(
+        group_name,
+        deployment_name,
+        properties=DeploymentProperties(
+            mode=DeploymentMode.incremental,
+            template_link=template,
+            parameters_link=parameters,
+        )
+    )
 
 
 def main():
@@ -49,7 +76,18 @@ def main():
     )
     group_name = 'vm_monitoring'
 
-    create_resource(credentials, group_name)
+    resource_client = ResourceManagementClient(
+        credentials,
+        SUBSCRIPTION_ID,
+    )
+
+    # create_resource_group(resource_client, group_name)
+
+    create_vm(
+        resource_client,
+        json.load(VM_DEPLOYMENT_PROPERTIES_FILE),
+        group_name,
+    )
 
 
 if __name__ == '__main__':
