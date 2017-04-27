@@ -112,10 +112,5 @@ def display_metrics():
                            metrics=monitor.get_metric_totals())
 
 
-@app.route('/update')
-def update_metrics():
-    pass
-
-
 if __name__ == '__main__':
     app.run(debug=True)

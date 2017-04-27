@@ -4,7 +4,7 @@
 <div class=page>
     <h1>VM Monitor</h1>
     <div class=metanav>
-        <a href="{{ url_for('update_metrics') }}">update</a>
+        <a href="{{ url_for('display_metrics') }}">update</a>
     </div>
     {% for message in get_flashed_messages() %}
     <div class=flash>{{ message }}</div>
