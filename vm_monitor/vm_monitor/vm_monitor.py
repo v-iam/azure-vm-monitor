@@ -84,12 +84,12 @@ class AzureMonitor(object):
             "aggregationType eq 'Total'",
             "startTime eq {}".format(start_time.isoformat()),
             "endTime eq {}".format(end_time.isoformat()),
-            "timeGrain eq duration'PT1H'"
+            "timeGrain eq duration'PT1H'",
         ])
 
         return self.client.metrics.list(
             self.resource_id,
-            filter=metric_filter
+            filter=metric_filter,
         )
     
     def show_metric_totals(metric_name='Network Out'):
