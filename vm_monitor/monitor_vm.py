@@ -13,6 +13,17 @@ from flask import Flask
 
 app = Flask(__name__)
 
+app.config.from_object(__name__) # load config from this file
+
+# Load default config and override config from an environment variable
+app.config.update(dict(
+    CLIENT_ID=os.environ['AZURE_CLIENT_ID'],
+    CLIENT_SECRET=os.environ['AZURE_CLIENT_SECRET'],
+    TENANT_ID=os.environ['AZURE_TENANT_ID'],
+    SUBSCRIPTION_ID=os.environ['AZURE_SUBSCRIPTION_ID']
+))
+app.config.from_envvar('AZURE_VM_MONITOR_SETTINGS', silent=True)
+
 
 class AzureMonitor(object):
     def __init__(self, subscription_id,
@@ -28,9 +39,9 @@ class AzureMonitor(object):
         ).format(self.subscription_id, self.resource_group_name, self.vm_name)
 
         credentials = ServicePrincipalCredentials(
-            client_id=os.environ['AZURE_CLIENT_ID'],
-            secret=os.environ['AZURE_CLIENT_SECRET'],
-            tenant=os.environ['AZURE_TENANT_ID'],
+            client_id=app.config['CLIENT_ID'],
+            secret=app.config['CLIENT_SECRET'],
+            tenant=app.config['TENANT_ID'],
         )
 
         resource_client = ResourceManagementClient(credentials, self.subscription_id)
@@ -59,8 +70,8 @@ class AzureMonitor(object):
                 metric.unit
             ))
 
-    def show_metric_totals(self):
-        # Get CPU total of yesterday for this VM, by hour
+    def get_metric_totals(self, metric_name='Network Out'):
+        # Get a metric per hour for the last 24 hours.
 
         utc_now = pytz.utc.localize(datetime.datetime.utcnow())
         tz_now = utc_now.astimezone(tzlocal.get_localzone())
@@ -69,17 +80,20 @@ class AzureMonitor(object):
         start_time = end_time - datetime.timedelta(days=1)
 
         metric_filter = " and ".join([
-            "name.value eq 'Network Out'",
+            "name.value eq '{}'".format(metricName),
             "aggregationType eq 'Total'",
             "startTime eq {}".format(start_time.isoformat()),
             "endTime eq {}".format(end_time.isoformat()),
             "timeGrain eq duration'PT1H'"
         ])
 
-        metrics_data = self.client.metrics.list(
+        return self.client.metrics.list(
             self.resource_id,
             filter=metric_filter
         )
+    
+    def show_metric_totals(metric_name='Network Out'):
+        metrics_data = get_metric_totals(metric_name)
 
         print(start_time, '-', end_time)
 
@@ -91,10 +105,11 @@ class AzureMonitor(object):
                 print("{}: {}".format(data.time_stamp, data.total))
 
 
-def main():
-    monitor = AzureMonitor(os.environ['AZURE_SUBSCRIPTION_ID'])
-    monitor.show_metrics()
-    monitor.show_metric_totals()
+@app.route('/')
+def display_metrics():
+    monitor = AzureMonitor(app.config['SUBSCRIPTION_ID'])
+    return render_template('show_metrics.html',
+                           metrics=monitor.get_metric_totals())
 
 
 if __name__ == '__main__':
