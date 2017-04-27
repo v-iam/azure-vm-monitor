@@ -1,0 +1,2 @@
+graft vm_monitor/templates
+graft vm_monitor/static
