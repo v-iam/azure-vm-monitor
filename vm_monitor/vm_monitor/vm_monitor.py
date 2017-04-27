@@ -9,7 +9,7 @@ from azure.monitor import MonitorClient
 import pytz
 import tzlocal
 
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -80,7 +80,7 @@ class AzureMonitor(object):
         start_time = end_time - datetime.timedelta(days=1)
 
         metric_filter = " and ".join([
-            "name.value eq '{}'".format(metricName),
+            "name.value eq '{}'".format(metric_name),
             "aggregationType eq 'Total'",
             "startTime eq {}".format(start_time.isoformat()),
             "endTime eq {}".format(end_time.isoformat()),
@@ -112,5 +112,10 @@ def display_metrics():
                            metrics=monitor.get_metric_totals())
 
 
+@app.route('/update')
+def update_metrics():
+    pass
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    app.run(debug=True)
