@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block body %}
+<!--
+        for item in metrics_data:
+            # azure.monitor.models.Metric
+            print("{} ({})".format(item.name.localized_value, item.unit.name))
+            for data in item.data:
+                # azure.monitor.models.MetricData
+                print("{}: {}".format(data.time_stamp, data.total))
+
+-->
+  {% for item in metrics %}
+  <h2>{{ item.name.localized_value }} ({{ item.unit.name }})</h2>
+  <ul class=entries>
+  {% for data in item.data %}
+    <li><h2>{{ data.time_stamp }}</h2>{{ data.total }}
+  {% else %}
+    <li><em>Unbelievable.  No entries here so far</em>
+  {% endfor %}
+  </ul>
+  {% endfor %}
+{% endblock %}
