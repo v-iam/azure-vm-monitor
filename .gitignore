@@ -2,3 +2,4 @@ credentials.*
 vm_templates
 __pycache__
 settings.json
+*.egg-info
